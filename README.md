@@ -1,6 +1,28 @@
-# Smart IDE App
+# Smart IDE App - Microfrontend Chat UI
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/relewant-dev/smart-ide-app/ci.yaml?style=for-the-badge&logo=github-actions&logoColor=white&color=2ecc71)](https://github.com/relewant-dev/smart-ide-app/actions)
-[![Latest Version](https://img.shields.io/github/v/release/relewant-dev/smart-ide-app?style=for-the-badge&logo=semver&logoColor=white&color=3498db)](https://github.com/relewant-dev/smart-ide-app/releases)
-[![License](https://img.shields.io/github/license/relewant-dev/smart-ide-app?style=for-the-badge&logo=opensourceinitiative&logoColor=white&color=f39c12)](./LICENSE)
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=for-the-badge&logo=git&logoColor=white&color=e74c3c)](https://conventionalcommits.org)
+A React + TypeScript + Node.js microfrontend setup inspired by modern conversational UIs.
+
+## Architecture
+
+- `apps/shell`: Host container app (React + Vite)
+- `apps/chat-mf`: Chat experience microfrontend (React + TypeScript)
+- `apps/sidebar-mf`: Sidebar/workspace microfrontend (React + TypeScript)
+- `server`: Node.js gateway serving metadata/endpoints
+- Module Federation via `@originjs/vite-plugin-federation`
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+This starts:
+- Shell on `http://localhost:5173`
+- Chat MF on `http://localhost:5174`
+- Sidebar MF on `http://localhost:5175`
+- Node API on `http://localhost:3001`
+
+## Notes
+
+This is intentionally not a clone of any proprietary UI. It is an original implementation using similar interaction patterns (sidebar + threaded chat + composer).

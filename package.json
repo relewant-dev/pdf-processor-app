@@ -1,0 +1,19 @@
+{
+  "name": "smart-ide-app",
+  "private": true,
+  "workspaces": ["apps/*", "server"],
+  "scripts": {
+    "dev": "npm-run-all -p dev:shell dev:chat dev:sidebar dev:server",
+    "dev:shell": "npm --workspace apps/shell run dev",
+    "dev:chat": "npm --workspace apps/chat-mf run dev",
+    "dev:sidebar": "npm --workspace apps/sidebar-mf run dev",
+    "dev:server": "npm --workspace server run dev",
+    "build": "npm-run-all build:chat build:sidebar build:shell",
+    "build:shell": "npm --workspace apps/shell run build",
+    "build:chat": "npm --workspace apps/chat-mf run build",
+    "build:sidebar": "npm --workspace apps/sidebar-mf run build"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  }
+}
