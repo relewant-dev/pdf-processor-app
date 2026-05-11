@@ -7,7 +7,15 @@ const BACKEND_URL = (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_BACKEND_
 );
 
 export async function POST(request: Request) {
-  const payload = await request.json();
+  let payload: unknown;
+
+  try {
+    payload = await request.json();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Request body must be valid JSON.";
+
+    return NextResponse.json({ detail }, { status: 400 });
+  }
 
   const backendResponse = await fetch(`${BACKEND_URL}/api/prompts/execute`, {
     method: "POST",
