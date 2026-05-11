@@ -1,0 +1,32 @@
+{
+  "name": "smart-ide-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Next.js application scaffold for the Smart IDE App.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "latest",
+    "eslint-config-prettier": "latest",
+    "typescript": "latest",
+    "typescript-eslint": "latest",
+    "@next/eslint-plugin-next": "latest"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
