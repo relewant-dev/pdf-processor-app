@@ -1,3 +1,4 @@
+import type { PdfUploadPayload, PdfUploadResponse } from "../models/document";
 import type { PromptPayload, PromptResponse } from "../models/prompt";
 
 type ApiErrorResponse = {
@@ -68,4 +69,25 @@ export function executePrompt(payload: PromptPayload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function uploadPdfDocument({ file, question, maxChars }: PdfUploadPayload) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("question", question);
+
+  if (maxChars !== undefined) {
+    formData.append("max_chars", String(maxChars));
+  }
+
+  const response = await fetch("/api/documents/pdf", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(await formatErrorMessage(response));
+  }
+
+  return response.json() as Promise<PdfUploadResponse>;
 }

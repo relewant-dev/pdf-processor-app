@@ -175,6 +175,48 @@ button {
 }
 
 
+
+.attachment-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  padding: 7px 10px 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: #fafafa;
+  color: #3f3f46;
+  font-size: 14px;
+}
+
+.attachment-chip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-chip__remove {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: #56565f;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.attachment-chip__remove:hover:not(:disabled) {
+  color: #111111;
+  text-decoration: underline;
+}
+
+.attachment-chip__remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .prompt-result {
   min-height: 24px;
   color: #1c1c1f;
