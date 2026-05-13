@@ -5,9 +5,11 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useExecutePrompt } from "../hooks/useExecutePrompt";
 import { useUploadPdfDocument } from "../hooks/useUploadPdfDocument";
 import { IconButton } from "./IconButton";
-import { MicrophoneIcon, PlusIcon, VoiceWaveIcon } from "./icons";
+import { DocumentIcon, MicrophoneIcon, PlusIcon, VoiceWaveIcon } from "./icons";
 import { ModeSelector } from "./ModeSelector";
 import { TextInput } from "./TextInput";
+
+const DEFAULT_PDF_QUESTION = "Summarize this document.";
 
 export function PromptComposer() {
   const [message, setMessage] = useState("");
@@ -18,19 +20,24 @@ export function PromptComposer() {
   const isPending = executePrompt.isPending || uploadPdfDocument.isPending;
   const error = executePrompt.error ?? uploadPdfDocument.error;
   const response = uploadPdfDocument.data?.response ?? executePrompt.data?.response;
+  const canSubmit = Boolean(message.trim() || selectedPdf) && !isPending;
+
+  function openPdfPicker() {
+    fileInputRef.current?.click();
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const trimmedMessage = message.trim();
 
-    if (!trimmedMessage || isPending) {
+    if (isPending || (!trimmedMessage && !selectedPdf)) {
       return;
     }
 
     if (selectedPdf) {
       executePrompt.reset();
-      uploadPdfDocument.mutate({ file: selectedPdf, question: trimmedMessage });
+      uploadPdfDocument.mutate({ file: selectedPdf, question: trimmedMessage || DEFAULT_PDF_QUESTION });
       return;
     }
 
@@ -47,6 +54,7 @@ export function PromptComposer() {
 
     setSelectedPdf(file);
     uploadPdfDocument.reset();
+    executePrompt.reset();
   }
 
   function handleRemovePdf() {
@@ -70,7 +78,7 @@ export function PromptComposer() {
           onChange={handlePdfChange}
           disabled={isPending}
         />
-        <IconButton label="Add PDF attachment" onClick={() => fileInputRef.current?.click()} disabled={isPending}>
+        <IconButton label="Add PDF attachment" onClick={openPdfPicker} disabled={isPending}>
           <PlusIcon className="prompt-icon" />
         </IconButton>
 
@@ -91,12 +99,22 @@ export function PromptComposer() {
             label={isPending ? "Sending prompt" : "Send prompt"}
             variant="filled"
             type="submit"
-            disabled={!message.trim() || isPending}
+            disabled={!canSubmit}
           >
             <VoiceWaveIcon className="prompt-icon" />
           </IconButton>
         </div>
       </form>
+
+      <div className="document-upload-panel">
+        <button className="document-upload-button" type="button" onClick={openPdfPicker} disabled={isPending}>
+          <DocumentIcon className="document-upload-button__icon" />
+          <span>{selectedPdf ? "Replace PDF document" : "Upload PDF document"}</span>
+        </button>
+        <p className="document-upload-panel__hint">
+          Attach a PDF, then ask a question or leave the prompt empty to test upload with a summary request.
+        </p>
+      </div>
 
       {selectedPdf ? (
         <div className="attachment-chip" aria-label="Selected PDF attachment">
