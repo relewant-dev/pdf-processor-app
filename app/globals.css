@@ -56,6 +56,13 @@ button {
   text-align: center;
 }
 
+.prompt-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .prompt-composer {
   width: 100%;
   min-height: 58px;
@@ -83,8 +90,14 @@ button {
   transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-.icon-button:hover {
+.icon-button:hover:not(:disabled) {
   background: #f2f2f4;
+}
+
+.icon-button:disabled,
+.text-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .icon-button:active {
@@ -98,7 +111,7 @@ button {
   color: #ffffff;
 }
 
-.icon-button--filled:hover {
+.icon-button--filled:hover:not(:disabled) {
   background: #1a1a1a;
 }
 
@@ -161,6 +174,22 @@ button {
   height: 12px;
 }
 
+
+.prompt-result {
+  min-height: 24px;
+  color: #1c1c1f;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.prompt-result p {
+  margin: 0;
+}
+
+.prompt-result [role="alert"] {
+  color: #b42318;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -182,7 +211,14 @@ button {
     gap: 36px;
   }
 
-  .prompt-composer {
+  .prompt-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.prompt-composer {
     padding-left: 12px;
     gap: 6px;
   }
