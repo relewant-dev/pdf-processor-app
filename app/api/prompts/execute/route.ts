@@ -6,7 +6,7 @@ const BACKEND_URL = (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_BACKEND_
   "",
 );
 
-export async function POST(request: Request) {
+export const POST = async (request: Request) => {
   let payload: unknown;
 
   try {
@@ -46,4 +46,4 @@ export async function POST(request: Request) {
       "Content-Type": backendResponse.headers.get("Content-Type") ?? "application/json",
     },
   });
-}
+};

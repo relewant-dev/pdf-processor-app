@@ -4,11 +4,19 @@ type TextInputProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
 };
 
-export function TextInput({ label, className = "", ...props }: TextInputProps) {
+export const TextInput = ({ label, className = "", ...props }: TextInputProps) => {
   return (
-    <label className="text-input-shell">
+    <label className="min-w-0 flex-1">
       <span className="sr-only">{label}</span>
-      <input className={["text-input", className].filter(Boolean).join(" ")} {...props} />
+      <input
+        className={[
+          "w-full border-0 bg-transparent text-base text-neutral-900 outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed disabled:opacity-55",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        {...props}
+      />
     </label>
   );
-}
+};
