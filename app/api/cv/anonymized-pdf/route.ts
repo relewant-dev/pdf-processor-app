@@ -20,22 +20,22 @@ export const POST = async (request: Request) => {
   let backendResponse: Response;
 
   try {
-    backendResponse = await fetch(`${BACKEND_URL}/api/documents/pdf`, {
+    backendResponse = await fetch(`${BACKEND_URL}/api/cv/anonymized-pdf`, {
       method: "POST",
       body: payload,
     });
   } catch (error) {
     const detail =
       error instanceof Error
-        ? `Unable to reach the document backend at ${BACKEND_URL}: ${error.message}`
-        : `Unable to reach the document backend at ${BACKEND_URL}.`;
+        ? `Unable to reach the CV anonymization backend at ${BACKEND_URL}: ${error.message}`
+        : `Unable to reach the CV anonymization backend at ${BACKEND_URL}.`;
 
     return NextResponse.json({ detail }, { status: 502 });
   }
 
-  const responseText = await backendResponse.text();
-
   if (!backendResponse.ok) {
+    const responseText = await backendResponse.text();
+
     return new NextResponse(responseText || `Request failed with status ${backendResponse.status}`, {
       status: backendResponse.status,
       headers: {
@@ -44,14 +44,13 @@ export const POST = async (request: Request) => {
     });
   }
 
-  if (!responseText) {
-    return new NextResponse(null, { status: backendResponse.status });
-  }
+  const anonymizedPdf = await backendResponse.arrayBuffer();
 
-  return new NextResponse(responseText, {
+  return new NextResponse(anonymizedPdf, {
     status: backendResponse.status,
     headers: {
-      "Content-Type": backendResponse.headers.get("Content-Type") ?? "application/json",
+      "Content-Disposition": backendResponse.headers.get("Content-Disposition") ?? 'attachment; filename="anonymized-cv.pdf"',
+      "Content-Type": backendResponse.headers.get("Content-Type") ?? "application/pdf",
     },
   });
 };

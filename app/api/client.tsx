@@ -5,7 +5,7 @@ type ApiErrorResponse = {
   detail?: unknown;
 };
 
-function formatErrorDetail(detail: unknown): string | undefined {
+const formatErrorDetail = (detail: unknown): string | undefined => {
   if (!detail) {
     return undefined;
   }
@@ -31,9 +31,9 @@ function formatErrorDetail(detail: unknown): string | undefined {
   }
 
   return JSON.stringify(detail);
-}
+};
 
-async function formatErrorMessage(response: Response): Promise<string> {
+const formatErrorMessage = async (response: Response): Promise<string> => {
   const errorText = await response.text();
 
   if (!errorText) {
@@ -46,9 +46,9 @@ async function formatErrorMessage(response: Response): Promise<string> {
   } catch {
     return errorText;
   }
-}
+};
 
-async function request<TResponse>(path: string, init?: RequestInit): Promise<TResponse> {
+const request = async <TResponse,>(path: string, init?: RequestInit): Promise<TResponse> => {
   const response = await fetch(path, {
     ...init,
     headers: {
@@ -62,16 +62,16 @@ async function request<TResponse>(path: string, init?: RequestInit): Promise<TRe
   }
 
   return response.json() as Promise<TResponse>;
-}
+};
 
-export function executePrompt(payload: PromptPayload) {
+export const executePrompt = (payload: PromptPayload) => {
   return request<PromptResponse>("/api/prompts/execute", {
     method: "POST",
     body: JSON.stringify(payload),
   });
-}
+};
 
-export async function uploadPdfDocument({ file, question, maxChars }: PdfUploadPayload) {
+export const uploadPdfDocument = async ({ file, question, maxChars }: PdfUploadPayload) => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("question", question);
@@ -90,4 +90,22 @@ export async function uploadPdfDocument({ file, question, maxChars }: PdfUploadP
   }
 
   return response.json() as Promise<PdfUploadResponse>;
-}
+};
+
+export const anonymizeCvPdf = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/cv/anonymized-pdf", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(await formatErrorMessage(response));
+  }
+
+  const pdfBlob = await response.blob();
+
+  return pdfBlob.type === "application/pdf" ? pdfBlob : new Blob([pdfBlob], { type: "application/pdf" });
+};
