@@ -17,10 +17,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ detail }, { status: 400 });
   }
 
-  const backendResponse = await fetch(`${BACKEND_URL}/api/documents/pdf`, {
-    method: "POST",
-    body: payload,
-  });
+  let backendResponse: Response;
+
+  try {
+    backendResponse = await fetch(`${BACKEND_URL}/api/documents/pdf`, {
+      method: "POST",
+      body: payload,
+    });
+  } catch (error) {
+    const detail =
+      error instanceof Error
+        ? `Unable to reach the document backend at ${BACKEND_URL}: ${error.message}`
+        : `Unable to reach the document backend at ${BACKEND_URL}.`;
+
+    return NextResponse.json({ detail }, { status: 502 });
+  }
 
   const responseText = await backendResponse.text();
 
