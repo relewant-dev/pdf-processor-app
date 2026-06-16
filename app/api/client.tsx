@@ -91,3 +91,20 @@ export async function uploadPdfDocument({ file, question, maxChars }: PdfUploadP
 
   return response.json() as Promise<PdfUploadResponse>;
 }
+export async function anonymizeCvPdf(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/cv/anonymized-pdf", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(await formatErrorMessage(response));
+  }
+
+  const pdfBlob = await response.blob();
+
+  return pdfBlob.type === "application/pdf" ? pdfBlob : new Blob([pdfBlob], { type: "application/pdf" });
+}
