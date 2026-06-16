@@ -17,10 +17,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ detail }, { status: 400 });
   }
 
-  const backendResponse = await fetch(`${BACKEND_URL}/api/cv/anonymized-pdf`, {
-    method: "POST",
-    body: payload,
-  });
+  let backendResponse: Response;
+
+  try {
+    backendResponse = await fetch(`${BACKEND_URL}/api/cv/anonymized-pdf`, {
+      method: "POST",
+      body: payload,
+    });
+  } catch (error) {
+    const detail =
+      error instanceof Error
+        ? `Unable to reach the CV anonymization backend at ${BACKEND_URL}: ${error.message}`
+        : `Unable to reach the CV anonymization backend at ${BACKEND_URL}.`;
+
+    return NextResponse.json({ detail }, { status: 502 });
+  }
 
   if (!backendResponse.ok) {
     const responseText = await backendResponse.text();

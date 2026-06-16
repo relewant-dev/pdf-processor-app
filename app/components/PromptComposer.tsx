@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
+import { anonymizeCvPdf } from "../api/client";
 import { useExecutePrompt } from "../hooks/useExecutePrompt";
 import { useUploadPdfDocument } from "../hooks/useUploadPdfDocument";
 import { IconButton } from "./IconButton";
@@ -9,7 +10,19 @@ import { DocumentIcon, MicrophoneIcon, PlusIcon, VoiceWaveIcon } from "./icons";
 import { ModeSelector } from "./ModeSelector";
 import { TextInput } from "./TextInput";
 
-const DEFAULT_PDF_QUESTION = "Summarize this document.";
+const ANONYMIZED_CV_FILENAME = "anonymized-cv.pdf";
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
 
 export function PromptComposer() {
   const [message, setMessage] = useState("");
@@ -17,8 +30,11 @@ export function PromptComposer() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const executePrompt = useExecutePrompt();
   const uploadPdfDocument = useUploadPdfDocument();
-  const isPending = executePrompt.isPending || uploadPdfDocument.isPending;
-  const error = executePrompt.error ?? uploadPdfDocument.error;
+  const [cvAnonymizationError, setCvAnonymizationError] = useState<Error | null>(null);
+  const [isAnonymizingCv, setIsAnonymizingCv] = useState(false);
+  const [cvAnonymizationSuccess, setCvAnonymizationSuccess] = useState(false);
+  const isPending = executePrompt.isPending || uploadPdfDocument.isPending || isAnonymizingCv;
+  const error = executePrompt.error ?? uploadPdfDocument.error ?? cvAnonymizationError;
   const response = uploadPdfDocument.data?.response ?? executePrompt.data?.response;
   const canSubmit = Boolean(message.trim() || selectedPdf) && !isPending;
 
@@ -35,13 +51,40 @@ export function PromptComposer() {
       return;
     }
 
+    if (selectedPdf && !trimmedMessage) {
+      executePrompt.reset();
+      uploadPdfDocument.reset();
+      setCvAnonymizationError(null);
+      setCvAnonymizationSuccess(false);
+      setIsAnonymizingCv(true);
+
+      anonymizeCvPdf(selectedPdf)
+        .then((anonymizedPdf) => {
+          downloadBlob(anonymizedPdf, ANONYMIZED_CV_FILENAME);
+          setCvAnonymizationSuccess(true);
+        })
+        .catch((caughtError: unknown) => {
+          setCvAnonymizationError(
+            caughtError instanceof Error ? caughtError : new Error("Unable to anonymize this CV PDF."),
+          );
+        })
+        .finally(() => {
+          setIsAnonymizingCv(false);
+        });
+      return;
+    }
+
     if (selectedPdf) {
       executePrompt.reset();
-      uploadPdfDocument.mutate({ file: selectedPdf, question: trimmedMessage || DEFAULT_PDF_QUESTION });
+      setCvAnonymizationError(null);
+      setCvAnonymizationSuccess(false);
+      uploadPdfDocument.mutate({ file: selectedPdf, question: trimmedMessage });
       return;
     }
 
     uploadPdfDocument.reset();
+    setCvAnonymizationError(null);
+    setCvAnonymizationSuccess(false);
     executePrompt.mutate({ message: trimmedMessage });
   }
 
@@ -55,11 +98,15 @@ export function PromptComposer() {
     setSelectedPdf(file);
     uploadPdfDocument.reset();
     executePrompt.reset();
+    setCvAnonymizationError(null);
+    setCvAnonymizationSuccess(false);
   }
 
   function handleRemovePdf() {
     setSelectedPdf(null);
     uploadPdfDocument.reset();
+    setCvAnonymizationError(null);
+    setCvAnonymizationSuccess(false);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -84,7 +131,7 @@ export function PromptComposer() {
 
         <TextInput
           label={selectedPdf ? "Question about attached PDF" : "Prompt"}
-          placeholder={selectedPdf ? "Ask a question about the attached PDF" : "Ask anything"}
+          placeholder={selectedPdf ? "Ask a question, or leave empty to anonymize a CV" : "Ask anything"}
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           disabled={isPending}
@@ -112,7 +159,7 @@ export function PromptComposer() {
           <span>{selectedPdf ? "Replace PDF document" : "Upload PDF document"}</span>
         </button>
         <p className="document-upload-panel__hint">
-          Attach a PDF, then ask a question or leave the prompt empty to test upload with a summary request.
+          Attach a PDF and ask a question, or leave the prompt empty to anonymize an uploaded CV.
         </p>
       </div>
 
@@ -126,8 +173,9 @@ export function PromptComposer() {
       ) : null}
 
       <div className="prompt-result" aria-live="polite">
-        {isPending ? <p>{selectedPdf ? "Reading PDF…" : "Thinking…"}</p> : null}
+        {isPending ? <p>{isAnonymizingCv ? "Anonymizing CV…" : selectedPdf ? "Reading PDF…" : "Thinking…"}</p> : null}
         {error ? <p role="alert">{error.message}</p> : null}
+        {cvAnonymizationSuccess ? <p>Your anonymized CV download has started.</p> : null}
         {response ? <p>{response}</p> : null}
       </div>
     </div>
