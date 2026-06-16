@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
 import { anonymizeCvPdf } from "../api/client";
 import { useExecutePrompt } from "../hooks/useExecutePrompt";
@@ -12,18 +12,6 @@ import { TextInput } from "./TextInput";
 
 const ANONYMIZED_CV_FILENAME = "anonymized-cv.pdf";
 
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
 export function PromptComposer() {
   const [message, setMessage] = useState("");
   const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
@@ -32,11 +20,23 @@ export function PromptComposer() {
   const uploadPdfDocument = useUploadPdfDocument();
   const [cvAnonymizationError, setCvAnonymizationError] = useState<Error | null>(null);
   const [isAnonymizingCv, setIsAnonymizingCv] = useState(false);
-  const [cvAnonymizationSuccess, setCvAnonymizationSuccess] = useState(false);
+  const [anonymizedCvDownloadUrl, setAnonymizedCvDownloadUrl] = useState<string | null>(null);
   const isPending = executePrompt.isPending || uploadPdfDocument.isPending || isAnonymizingCv;
   const error = executePrompt.error ?? uploadPdfDocument.error ?? cvAnonymizationError;
   const response = uploadPdfDocument.data?.response ?? executePrompt.data?.response;
   const canSubmit = Boolean(message.trim() || selectedPdf) && !isPending;
+
+  useEffect(() => {
+    return () => {
+      if (anonymizedCvDownloadUrl) {
+        URL.revokeObjectURL(anonymizedCvDownloadUrl);
+      }
+    };
+  }, [anonymizedCvDownloadUrl]);
+
+  function clearAnonymizedCvDownload() {
+    setAnonymizedCvDownloadUrl(null);
+  }
 
   function openPdfPicker() {
     fileInputRef.current?.click();
@@ -55,13 +55,12 @@ export function PromptComposer() {
       executePrompt.reset();
       uploadPdfDocument.reset();
       setCvAnonymizationError(null);
-      setCvAnonymizationSuccess(false);
+      clearAnonymizedCvDownload();
       setIsAnonymizingCv(true);
 
       anonymizeCvPdf(selectedPdf)
         .then((anonymizedPdf) => {
-          downloadBlob(anonymizedPdf, ANONYMIZED_CV_FILENAME);
-          setCvAnonymizationSuccess(true);
+          setAnonymizedCvDownloadUrl(URL.createObjectURL(anonymizedPdf));
         })
         .catch((caughtError: unknown) => {
           setCvAnonymizationError(
@@ -77,14 +76,14 @@ export function PromptComposer() {
     if (selectedPdf) {
       executePrompt.reset();
       setCvAnonymizationError(null);
-      setCvAnonymizationSuccess(false);
+      clearAnonymizedCvDownload();
       uploadPdfDocument.mutate({ file: selectedPdf, question: trimmedMessage });
       return;
     }
 
     uploadPdfDocument.reset();
     setCvAnonymizationError(null);
-    setCvAnonymizationSuccess(false);
+    clearAnonymizedCvDownload();
     executePrompt.mutate({ message: trimmedMessage });
   }
 
@@ -99,14 +98,14 @@ export function PromptComposer() {
     uploadPdfDocument.reset();
     executePrompt.reset();
     setCvAnonymizationError(null);
-    setCvAnonymizationSuccess(false);
+    clearAnonymizedCvDownload();
   }
 
   function handleRemovePdf() {
     setSelectedPdf(null);
     uploadPdfDocument.reset();
     setCvAnonymizationError(null);
-    setCvAnonymizationSuccess(false);
+    clearAnonymizedCvDownload();
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -175,7 +174,14 @@ export function PromptComposer() {
       <div className="prompt-result" aria-live="polite">
         {isPending ? <p>{isAnonymizingCv ? "Anonymizing CV…" : selectedPdf ? "Reading PDF…" : "Thinking…"}</p> : null}
         {error ? <p role="alert">{error.message}</p> : null}
-        {cvAnonymizationSuccess ? <p>Your anonymized CV download has started.</p> : null}
+        {anonymizedCvDownloadUrl ? (
+          <div className="download-card">
+            <p>Your anonymized CV is ready.</p>
+            <a className="download-card__button" href={anonymizedCvDownloadUrl} download={ANONYMIZED_CV_FILENAME}>
+              Download anonymized CV
+            </a>
+          </div>
+        ) : null}
         {response ? <p>{response}</p> : null}
       </div>
     </div>

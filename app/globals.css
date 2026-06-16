@@ -279,6 +279,36 @@ button {
   color: #b42318;
 }
 
+.download-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.download-card__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: #000000;
+  color: #ffffff;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.download-card__button:hover {
+  background: #1a1a1a;
+}
+
+.download-card__button:active {
+  transform: scale(0.98);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
