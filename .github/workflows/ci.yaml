@@ -1,4 +1,4 @@
-name: Release & Tagging
+name: Frontend CI & Release
 
 on:
   push:
@@ -8,8 +8,40 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  release:
+  validate:
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint Conventional Commits
+        if: github.event_name == 'pull_request'
+        uses: wagoid/commitlint-github-action@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Tests
+        run: npm test -- --runInBand
+
+      - name: Build Application
+        run: npm run build
+
+  release:
+    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+
     permissions:
       contents: write
       pull-requests: write
@@ -21,12 +53,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Lint Conventional Commits
-        if: github.event_name == 'pull_request'
-        uses: wagoid/commitlint-github-action@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Ensure initial tag v0.0.0
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -38,7 +74,13 @@ jobs:
           fi
 
       - name: Semantic Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: cycjimmy/semantic-release-action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger pdf-processor-infra deployment
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.INFRA_REPO_PAT }}
+          repository: relewant-dev/pdf-processor-infra
+          event-type: frontend-deployed
