@@ -20,7 +20,7 @@ jobs:
         uses: wagoid/commitlint-github-action@v5
 
   release:
-    ## if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    ### if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
 
