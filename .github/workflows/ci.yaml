@@ -74,3 +74,4 @@ jobs:
           repository: relewant-dev/pdf-processor-infra
           event-type: frontend-deployed
           client-payload: '{"image":"${{ env.IMAGE_NAME }}","tag":"${{ github.sha }}"}'
+##
