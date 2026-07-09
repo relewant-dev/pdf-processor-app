@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
 
+import { useAnonymizeCvPdf } from "../hooks/useAnonymizeCvPdf";
 import { useExecutePrompt } from "../hooks/useExecutePrompt";
 import { useUploadPdfDocument } from "../hooks/useUploadPdfDocument";
 import { DocumentIcon, SendIcon } from "./icons";
@@ -12,11 +13,12 @@ export const PromptComposer = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const executePrompt = useExecutePrompt();
   const uploadPdfDocument = useUploadPdfDocument();
-  const isPending = executePrompt.isPending || uploadPdfDocument.isPending;
-  const error = executePrompt.error ?? uploadPdfDocument.error;
+  const anonymizeCvPdf = useAnonymizeCvPdf();
+  const isPending = executePrompt.isPending || uploadPdfDocument.isPending || anonymizeCvPdf.isPending;
+  const error = executePrompt.error ?? uploadPdfDocument.error ?? anonymizeCvPdf.error;
   const response = uploadPdfDocument.data?.response ?? executePrompt.data?.response;
   const trimmedMessage = message.trim();
-  const canSubmit = Boolean(trimmedMessage) && !isPending;
+  const canSubmit = Boolean(trimmedMessage || selectedPdf) && !isPending;
 
   const openPdfPicker = () => {
     fileInputRef.current?.click();
@@ -25,17 +27,35 @@ export const PromptComposer = () => {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (isPending || !trimmedMessage) {
+    if (isPending || !canSubmit) {
+      return;
+    }
+
+    if (selectedPdf && !trimmedMessage) {
+      executePrompt.reset();
+      uploadPdfDocument.reset();
+      anonymizeCvPdf.mutate(selectedPdf, {
+        onSuccess: (anonymizedPdf) => {
+          const downloadUrl = URL.createObjectURL(anonymizedPdf);
+          const downloadLink = document.createElement("a");
+          downloadLink.href = downloadUrl;
+          downloadLink.download = `anonymized-${selectedPdf.name}`;
+          downloadLink.click();
+          URL.revokeObjectURL(downloadUrl);
+        },
+      });
       return;
     }
 
     if (selectedPdf) {
       executePrompt.reset();
+      anonymizeCvPdf.reset();
       uploadPdfDocument.mutate({ file: selectedPdf, question: trimmedMessage });
       return;
     }
 
     uploadPdfDocument.reset();
+    anonymizeCvPdf.reset();
     executePrompt.mutate({ message: trimmedMessage });
   };
 
@@ -60,12 +80,14 @@ export const PromptComposer = () => {
 
     setSelectedPdf(file);
     uploadPdfDocument.reset();
+    anonymizeCvPdf.reset();
     executePrompt.reset();
   };
 
   const handleRemovePdf = () => {
     setSelectedPdf(null);
     uploadPdfDocument.reset();
+    anonymizeCvPdf.reset();
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -122,7 +144,7 @@ export const PromptComposer = () => {
           <span>{selectedPdf ? "Replace PDF document" : "Upload PDF document"}</span>
         </button>
         <p className="m-0 flex-[1_1_260px] text-[13px] leading-snug text-neutral-400">
-          Attach a PDF and ask a question about it.
+          Attach a PDF and ask a question about it, or send it without text to anonymize a CV.
         </p>
       </div>
 
@@ -136,8 +158,9 @@ export const PromptComposer = () => {
       ) : null}
 
       <div className="min-h-6 text-[15px] leading-normal text-neutral-900 [&_[role=alert]]:text-red-700 [&_p]:m-0" aria-live="polite">
-        {isPending ? <p>{selectedPdf ? "Reading PDF…" : "Thinking…"}</p> : null}
+        {isPending ? <p>{selectedPdf && !trimmedMessage ? "Anonymizing CV…" : selectedPdf ? "Reading PDF…" : "Thinking…"}</p> : null}
         {error ? <p role="alert">{error.message}</p> : null}
+        {anonymizeCvPdf.isSuccess ? <p>Your anonymized CV download is ready.</p> : null}
         {response ? <p>{response}</p> : null}
       </div>
     </div>
