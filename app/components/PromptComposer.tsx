@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
 
 import { useAnonymizeCvPdf } from "../hooks/useAnonymizeCvPdf";
 import { useExecutePrompt } from "../hooks/useExecutePrompt";
 import { useUploadPdfDocument } from "../hooks/useUploadPdfDocument";
+import { DocumentIcon, SendIcon } from "./icons";
 import { DocumentIcon, SendIcon } from "./icons";
 
 export const PromptComposer = () => {
@@ -71,6 +73,18 @@ export const PromptComposer = () => {
     }
   };
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== "Enter" || event.shiftKey) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (canSubmit) {
+      event.currentTarget.form?.requestSubmit();
+    }
+  };
+
   const handlePdfChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
 
@@ -101,6 +115,11 @@ export const PromptComposer = () => {
         aria-label="Assistant prompt composer"
         onSubmit={handleSubmit}
       >
+      <form
+        className="flex min-h-[58px] w-full items-end gap-2.5 rounded-[30px] border border-neutral-200 bg-white/95 py-2 pl-[18px] pr-2 shadow-[0_16px_42px_rgba(20,20,30,0.08),0_2px_8px_rgba(20,20,30,0.08)] max-[560px]:gap-1.5 max-[560px]:pl-3"
+        aria-label="Assistant prompt composer"
+        onSubmit={handleSubmit}
+      >
         <input
           ref={fileInputRef}
           className="sr-only"
@@ -124,6 +143,31 @@ export const PromptComposer = () => {
           />
         </label>
 
+        <label className="min-w-0 flex-1 py-2">
+          <span className="sr-only">{selectedPdf ? "Question about attached PDF" : "Prompt"}</span>
+          <textarea
+            className="max-h-40 min-h-6 w-full resize-none border-0 bg-transparent text-base leading-6 text-neutral-900 outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed disabled:opacity-55"
+            placeholder={selectedPdf ? "Ask a question about the attached PDF" : "Ask anything"}
+            rows={1}
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isPending}
+          />
+        </label>
+
+        <button
+          className="mb-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-neutral-950 text-white shadow-[0_8px_24px_rgba(20,20,30,0.14)] transition duration-150 ease-out hover:bg-neutral-800 active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400 disabled:shadow-none"
+          type="submit"
+          aria-label={isPending ? "Sending prompt" : "Send prompt"}
+          disabled={!canSubmit}
+        >
+          {isPending ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
+          ) : (
+            <SendIcon className="h-5 w-5" />
+          )}
+        </button>
         <button
           className="mb-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-neutral-950 text-white shadow-[0_8px_24px_rgba(20,20,30,0.14)] transition duration-150 ease-out hover:bg-neutral-800 active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-400 disabled:shadow-none"
           type="submit"
